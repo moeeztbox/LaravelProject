@@ -15,6 +15,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Authorized in the controller via $this->authorize('delete', $project) -> ProjectPolicy
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
-    // Authorized here via the 'can' middleware -> TaskPolicy::update
-    Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('can:update,task');
+    // All authorized via the 'can' middleware -> TaskPolicy::update
+    Route::middleware('can:update,task')->group(function () {
+        Route::put('/tasks/{task}', [TaskController::class, 'update']);
+        Route::get('/tasks/{task}/collaborators', [TaskController::class, 'collaborators']);
+        Route::post('/tasks/{task}/collaborators', [TaskController::class, 'attachCollaborator']);
+        Route::put('/tasks/{task}/collaborators', [TaskController::class, 'syncCollaborators']);
+        Route::delete('/tasks/{task}/collaborators/{user}', [TaskController::class, 'detachCollaborator']);
+    });
 });

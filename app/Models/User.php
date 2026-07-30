@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -62,5 +63,14 @@ class User extends Authenticatable
     public function hasRole(string $role): bool
     {
         return $this->role?->name === $role;
+    }
+
+    /**
+     * Tasks this user is collaborating on (many-to-many via task_user),
+     * distinct from tasks assigned to them (Task::assignedUser, one-to-many).
+     */
+    public function collaboratingTasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_user')->withTimestamps();
     }
 }
