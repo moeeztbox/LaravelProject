@@ -1,0 +1,933 @@
+{
+	"info": {
+		"_postman_id": "b7e2a6b0-1c1a-4b8a-9a3e-project-management-api",
+		"name": "Project Management API",
+		"description": "API collection for the Project Management app. Covers Authentication, Projects, Tasks, and Task Assignment, with happy-path and denied-case (401/403/422) examples for each. Also includes Profile Upload and Task Collaborators for full endpoint coverage.\n\nSet `base_url` and log in via the Authentication folder first — the login/register requests automatically save the returned token into the `token` collection variable, which every other request uses as its Bearer token.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{token}}", "type": "string" }
+		]
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8000/api", "type": "string" },
+		{ "key": "token", "value": "", "type": "string" },
+		{ "key": "admin_token", "value": "", "type": "string" },
+		{ "key": "manager_token", "value": "", "type": "string" },
+		{ "key": "employee_token", "value": "", "type": "string" },
+		{ "key": "other_employee_token", "value": "", "type": "string" },
+		{ "key": "project_id", "value": "1", "type": "string" },
+		{ "key": "other_project_id", "value": "2", "type": "string" },
+		{ "key": "task_id", "value": "1", "type": "string" },
+		{ "key": "other_task_id", "value": "2", "type": "string" },
+		{ "key": "user_id", "value": "1", "type": "string" }
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register (happy path)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('token', pm.response.json().token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New User\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/register" },
+							"code": 201,
+							"status": "Created",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"User registered successfully.\",\n    \"user\": {\n        \"id\": 10,\n        \"name\": \"New User\",\n        \"email\": \"newuser@example.com\",\n        \"role\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    },\n    \"token\": \"1|abcdef1234567890\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Register - Validation Error (422)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"email\": \"not-an-email\",\n    \"password\": \"short\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/register" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The name field is required. (and 2 more errors)\",\n    \"errors\": {\n        \"name\": [\"The name field is required.\"],\n        \"email\": [\"The email field must be a valid email address.\"],\n        \"password\": [\"The password field must be at least 8 characters.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Login (happy path)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('token', pm.response.json().token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/login" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Login successful.\",\n    \"user\": {\n        \"id\": 10,\n        \"name\": \"New User\",\n        \"email\": \"newuser@example.com\",\n        \"role\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    },\n    \"token\": \"2|ghijkl1234567890\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Login - Invalid Credentials (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"wrong-password\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+					},
+					"response": [
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/login" },
+							"code": 401,
+							"status": "Unauthorized",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The provided credentials are incorrect.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Login - Validation Error (422)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{}" },
+						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/login" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The email field is required. (and 1 more error)\",\n    \"errors\": {\n        \"email\": [\"The email field is required.\"],\n        \"password\": [\"The password field is required.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Authenticated User (happy path)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/user", "host": ["{{base_url}}"], "path": ["user"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/user" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"user\": {\n        \"id\": 10,\n        \"name\": \"New User\",\n        \"email\": \"newuser@example.com\",\n        \"role\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Authenticated User - Unauthenticated (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/user", "host": ["{{base_url}}"], "path": ["user"] }
+					},
+					"response": [
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/user" },
+							"code": 401,
+							"status": "Unauthorized",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Logout (happy path)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/logout" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Logged out successfully.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Logout - Unauthenticated (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+					},
+					"response": [
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/logout" },
+							"code": 401,
+							"status": "Unauthorized",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Projects",
+			"item": [
+				{
+					"name": "Create Project (happy path)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Website Redesign\",\n    \"description\": \"Q3 initiative\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/projects" },
+							"code": 201,
+							"status": "Created",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Project created successfully.\",\n    \"project\": {\n        \"id\": 1,\n        \"title\": \"Website Redesign\",\n        \"description\": \"Q3 initiative\",\n        \"created_by\": 5,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Project - Validation Error (422)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"description\": \"missing title\"\n}" },
+						"url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/projects" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The title field is required.\",\n    \"errors\": {\n        \"title\": [\"The title field is required.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Project - Unauthenticated (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"title\": \"No Auth\"\n}" },
+						"url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+					},
+					"response": [
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/projects" },
+							"code": 401,
+							"status": "Unauthorized",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Projects (happy path)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/projects", "host": ["{{base_url}}"], "path": ["projects"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/projects" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"projects\": [\n        {\n            \"id\": 1,\n            \"title\": \"Website Redesign\",\n            \"description\": \"Q3 initiative\",\n            \"created_by\": 5,\n            \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n            \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Show Project (happy path)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/projects/{{project_id}}", "host": ["{{base_url}}"], "path": ["projects", "{{project_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/projects/{{project_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"project\": {\n        \"id\": 1,\n        \"title\": \"Website Redesign\",\n        \"description\": \"Q3 initiative\",\n        \"created_by\": 5,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Project - Owner or Admin/Manager (happy path)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"title\": \"Website Redesign v2\"\n}" },
+						"url": { "raw": "{{base_url}}/projects/{{project_id}}", "host": ["{{base_url}}"], "path": ["projects", "{{project_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/projects/{{project_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Project updated successfully.\",\n    \"project\": {\n        \"id\": 1,\n        \"title\": \"Website Redesign v2\",\n        \"description\": \"Q3 initiative\",\n        \"created_by\": 5,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:05:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Project - Not Owner, Not Admin/Manager (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"title\": \"Hijack Attempt\"\n}" },
+						"url": { "raw": "{{base_url}}/projects/{{other_project_id}}", "host": ["{{base_url}}"], "path": ["projects", "{{other_project_id}}"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/projects/{{other_project_id}}" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Project - Admin (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/projects/{{project_id}}", "host": ["{{base_url}}"], "path": ["projects", "{{project_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "DELETE", "url": "{{base_url}}/projects/{{project_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Project deleted successfully.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Project - Non-Admin (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{manager_token}}", "type": "string" }] },
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/projects/{{project_id}}", "host": ["{{base_url}}"], "path": ["projects", "{{project_id}}"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "DELETE", "url": "{{base_url}}/projects/{{project_id}}" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task - Admin/Manager (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"project_id\": {{project_id}},\n    \"assigned_to\": {{user_id}},\n    \"title\": \"Design homepage\",\n    \"status\": \"pending\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/tasks" },
+							"code": 201,
+							"status": "Created",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Task created successfully.\",\n    \"task\": {\n        \"id\": 1,\n        \"project_id\": 1,\n        \"assigned_to\": 7,\n        \"title\": \"Design homepage\",\n        \"description\": null,\n        \"status\": \"pending\",\n        \"deadline\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Task - Employee (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"project_id\": {{project_id}},\n    \"title\": \"Not allowed\"\n}" },
+						"url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/tasks" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Task - Validation Error (422)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"project_id\": 999999,\n    \"title\": \"Orphan Task\"\n}" },
+						"url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/tasks" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The selected project id is invalid.\",\n    \"errors\": {\n        \"project_id\": [\"The selected project id is invalid.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List Tasks (role-filtered)",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks", "host": ["{{base_url}}"], "path": ["tasks"] }
+					},
+					"response": [
+						{
+							"name": "200 OK (Admin/Manager see all)",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/tasks" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"tasks\": [\n        {\n            \"id\": 1,\n            \"project_id\": 1,\n            \"assigned_to\": 7,\n            \"title\": \"Design homepage\",\n            \"description\": null,\n            \"status\": \"pending\",\n            \"deadline\": null,\n            \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n            \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "200 OK (Employee sees only their own assigned tasks)",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/tasks" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"tasks\": [\n        {\n            \"id\": 1,\n            \"project_id\": 1,\n            \"assigned_to\": 7,\n            \"title\": \"Design homepage\",\n            \"description\": null,\n            \"status\": \"pending\",\n            \"deadline\": null,\n            \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n            \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Show Task - Assigned to Me (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"task\": {\n        \"id\": 1,\n        \"project_id\": 1,\n        \"assigned_to\": 7,\n        \"title\": \"Design homepage\",\n        \"description\": null,\n        \"status\": \"pending\",\n        \"deadline\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:00:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Show Task - Not Assigned to Me (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{other_employee_token}}", "type": "string" }] },
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Task - Assigned to Me (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"status\": \"in_progress\"\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Task updated successfully.\",\n    \"task\": {\n        \"id\": 1,\n        \"project_id\": 1,\n        \"assigned_to\": 7,\n        \"title\": \"Design homepage\",\n        \"description\": null,\n        \"status\": \"in_progress\",\n        \"deadline\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:05:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Task - Not Assigned to Me (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{other_employee_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"status\": \"blocked\"\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Task - Validation Error (422)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"deadline\": \"not-a-date\"\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The deadline field must be a valid date.\",\n    \"errors\": {\n        \"deadline\": [\"The deadline field must be a valid date.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Task - Admin/Manager (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "DELETE", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Task deleted successfully.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Task - Employee, Even Own Task (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "DELETE", "url": "{{base_url}}/tasks/{{task_id}}" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Task Assignment",
+			"item": [
+				{
+					"name": "Assign Task - Admin/Manager (happy path)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"assigned_to\": {{user_id}}\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/assign", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "assign"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}/assign" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Task assigned successfully.\",\n    \"task\": {\n        \"id\": 1,\n        \"project_id\": 1,\n        \"assigned_to\": 7,\n        \"title\": \"Design homepage\",\n        \"description\": null,\n        \"status\": \"pending\",\n        \"deadline\": null,\n        \"created_at\": \"2026-08-04T07:00:00.000000Z\",\n        \"updated_at\": \"2026-08-04T07:10:00.000000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Assign Task - Invalid User (422)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"assigned_to\": 999999\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/assign", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "assign"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}/assign" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The selected assigned to is invalid.\",\n    \"errors\": {\n        \"assigned_to\": [\"The selected assigned to is invalid.\"]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Assign Task - Unauthorized (Employee) (403)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{employee_token}}", "type": "string" }] },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"assigned_to\": {{user_id}}\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/assign", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "assign"] }
+					},
+					"response": [
+						{
+							"name": "403 Forbidden",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}/assign" },
+							"code": 403,
+							"status": "Forbidden",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"This action is unauthorized.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Assign Task - Unauthenticated (401)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"assigned_to\": {{user_id}}\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/assign", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "assign"] }
+					},
+					"response": [
+						{
+							"name": "401 Unauthorized",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}/assign" },
+							"code": 401,
+							"status": "Unauthorized",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Profile (supplementary)",
+			"description": "Not one of the four Day 4 feature areas, but included for full endpoint coverage per 'include every API endpoint'.",
+			"item": [
+				{
+					"name": "Upload Profile Picture (happy path)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "profile_picture", "type": "file", "src": [] }
+							]
+						},
+						"url": { "raw": "{{base_url}}/profile/upload", "host": ["{{base_url}}"], "path": ["profile", "upload"] }
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/profile/upload" },
+							"code": 201,
+							"status": "Created",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Profile picture uploaded successfully.\",\n    \"path\": \"profile-pictures/abc123.png\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Profile Picture - Validation Error (422)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"body": { "mode": "formdata", "formdata": [] },
+						"url": { "raw": "{{base_url}}/profile/upload", "host": ["{{base_url}}"], "path": ["profile", "upload"] }
+					},
+					"response": [
+						{
+							"name": "422 Unprocessable Content",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/profile/upload" },
+							"code": 422,
+							"status": "Unprocessable Content",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"The profile picture field is required.\",\n    \"errors\": {\n        \"profile_picture\": [\"The profile picture field is required.\"]\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Task Collaborators (supplementary)",
+			"description": "Not one of the four Day 4 feature areas, but included for full endpoint coverage per 'include every API endpoint'. Reuses the same authorization ability as Update Task.",
+			"item": [
+				{
+					"name": "List Collaborators",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/collaborators", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "collaborators"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "GET", "url": "{{base_url}}/tasks/{{task_id}}/collaborators" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"collaborators\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Collaborator",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"user_id\": {{user_id}}\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/collaborators", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "collaborators"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "POST", "url": "{{base_url}}/tasks/{{task_id}}/collaborators" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Collaborator added successfully.\",\n    \"collaborators\": [\n        { \"id\": 7, \"name\": \"Jane Doe\", \"email\": \"jane@example.com\", \"role\": \"Employee\" }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Sync Collaborators",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n    \"user_ids\": [{{user_id}}]\n}" },
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/collaborators", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "collaborators"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "PUT", "url": "{{base_url}}/tasks/{{task_id}}/collaborators" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Collaborators synced successfully.\",\n    \"collaborators\": [\n        { \"id\": 7, \"name\": \"Jane Doe\", \"email\": \"jane@example.com\", \"role\": \"Employee\" }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Remove Collaborator",
+					"request": {
+						"method": "DELETE",
+						"header": [{ "key": "Accept", "value": "application/json" }],
+						"url": { "raw": "{{base_url}}/tasks/{{task_id}}/collaborators/{{user_id}}", "host": ["{{base_url}}"], "path": ["tasks", "{{task_id}}", "collaborators", "{{user_id}}"] }
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": { "method": "DELETE", "url": "{{base_url}}/tasks/{{task_id}}/collaborators/{{user_id}}" },
+							"code": 200,
+							"status": "OK",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Collaborator removed successfully.\"\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

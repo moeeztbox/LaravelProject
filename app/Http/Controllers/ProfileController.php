@@ -14,11 +14,18 @@ class ProfileController extends Controller
      */
     public function upload(UploadProfilePictureRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $previousPath = $user->profile_picture;
+
         $path = $request->file('profile_picture')->store('profile-pictures', 'public');
 
-        $request->user()->update([
+        $user->update([
             'profile_picture' => $path,
         ]);
+
+        if ($previousPath) {
+            Storage::disk('public')->delete($previousPath);
+        }
 
         return response()->json([
             'message' => 'Profile picture uploaded successfully.',
